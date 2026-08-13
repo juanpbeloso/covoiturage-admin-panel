@@ -12,6 +12,8 @@
 | `NEXT_PUBLIC_API_URL` | URL de la API Subite (ej. `https://fearless-unity-production-04ec.up.railway.app`) |
 | `AUTH_COOKIE_NAME` | `subite_admin_session` (opcional) |
 
+Login admin: usar `Admin__Email` y `Admin__Password` de la API (default seed: `admin@subiteapp.com.ar`).
+
 ## Networking
 Generar dominio público en Railway → abrir la URL del panel.
 

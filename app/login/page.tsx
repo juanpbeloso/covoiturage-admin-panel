@@ -81,7 +81,7 @@ export default function LoginPage() {
         </button>
 
         <p className="mt-4 text-center text-xs text-slate-500">
-          Modo demo: cualquier email y contraseña sirven.
+          Usuario admin configurado en la API (Admin__Email / Admin__Password).
         </p>
       </form>
     </div>

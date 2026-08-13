@@ -1,25 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_URL, AUTH_COOKIE_NAME } from "@/lib/server-api";
 
-const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "subite_admin_session";
-
-/** Login mock: acepta cualquier email/contraseña y setea cookie de sesión. */
 export async function POST(request: NextRequest) {
-  const body = (await request.json().catch(() => null)) as
-    | { email?: string; password?: string }
-    | null;
+  const body = await request.json().catch(() => null);
 
-  const email = body?.email?.trim();
-  if (!email) {
-    return NextResponse.json({ message: "Email requerido." }, { status: 400 });
+  const res = await fetch(`${API_URL}/admin/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message =
+      (data as { message?: string; error?: string } | null)?.message ??
+      (data as { error?: string } | null)?.error ??
+      "Credenciales inválidas";
+    return NextResponse.json({ message }, { status: res.status });
   }
 
-  const response = NextResponse.json({ success: true, email });
-  response.cookies.set(AUTH_COOKIE_NAME, "mock-session", {
+  const token = (data as { accessToken?: string }).accessToken;
+  if (!token) {
+    return NextResponse.json({ message: "Respuesta inválida del servidor." }, { status: 500 });
+  }
+
+  const response = NextResponse.json({ success: true });
+  response.cookies.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 días
+    maxAge: 60 * 60 * 8,
   });
 
   return response;
