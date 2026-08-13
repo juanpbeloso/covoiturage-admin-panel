@@ -16,13 +16,17 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // MOCK — reemplazar por POST a /app/api/login (Route Handler) que a su
-      // vez llame a subite-api /admin/auth/login y setee la cookie httpOnly.
-      // const res = await fetch("/api/login", { method: "POST", body: JSON.stringify({ email, password }) });
-      // if (!res.ok) throw new Error("Credenciales inválidas");
-
-      await new Promise((r) => setTimeout(r, 600)); // simula latencia
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message ?? "Credenciales inválidas");
+      }
       router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {
@@ -75,6 +79,10 @@ export default function LoginPage() {
         >
           {loading ? "Ingresando..." : "Ingresar"}
         </button>
+
+        <p className="mt-4 text-center text-xs text-slate-500">
+          Modo demo: cualquier email y contraseña sirven.
+        </p>
       </form>
     </div>
   );

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "subite_admin_session";
 
 // Rutas que no requieren sesión
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/api/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
