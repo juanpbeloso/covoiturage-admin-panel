@@ -1,27 +1,17 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import KpiCard from "@/components/KpiCard";
 import KpiChart, { SeriePoint } from "@/components/KpiChart";
-// import { getDashboardKpis } from "@/lib/api"; // usar cuando exista /admin/dashboard/kpis
 
-// MOCK — reemplazar por: const kpis = await getDashboardKpis(token);
-const MOCK_KPIS = {
-  usuarios: 1204,
-  viajesPublicados: 312,
-  reservas: 540,
-  pagosOk: 498,
-  pagosFail: 42,
-  gmvAproximado: 2100000,
+type Kpis = {
+  usuarios: number;
+  viajesPublicados: number;
+  reservas: number;
+  pagosOk: number;
+  pagosFail: number;
+  gmvAproximado: number;
 };
-
-// MOCK — reemplazar por: const serie = await getDashboardSeries(token);
-const MOCK_SERIE: SeriePoint[] = [
-  { fecha: "06/08", reservas: 12 },
-  { fecha: "07/08", reservas: 19 },
-  { fecha: "08/08", reservas: 14 },
-  { fecha: "09/08", reservas: 22 },
-  { fecha: "10/08", reservas: 28 },
-  { fecha: "11/08", reservas: 24 },
-  { fecha: "12/08", reservas: 31 },
-];
 
 function formatARS(value: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -31,31 +21,52 @@ function formatARS(value: number) {
   }).format(value);
 }
 
-export default async function DashboardPage() {
-  // En una implementación real: leer token de la cookie httpOnly (server-side)
-  // y llamar a getDashboardKpis(token) / getDashboardSeries(token) acá mismo,
-  // ya que este es un Server Component por default en el App Router.
-  const kpis = MOCK_KPIS;
-  const serie = MOCK_SERIE;
+export default function DashboardPage() {
+  const [kpis, setKpis] = useState<Kpis | null>(null);
+  const [serie, setSerie] = useState<SeriePoint[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [kpisRes, serieRes] = await Promise.all([
+          fetch("/api/proxy/admin/dashboard/kpis"),
+          fetch("/api/proxy/admin/dashboard/series?days=7"),
+        ]);
+        if (!kpisRes.ok || !serieRes.ok) {
+          throw new Error("No se pudieron cargar los indicadores.");
+        }
+        setKpis((await kpisRes.json()) as Kpis);
+        setSerie((await serieRes.json()) as SeriePoint[]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al cargar.");
+      }
+    }
+
+    void load();
+  }, []);
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold text-subite-dark">
-        Dashboard
-      </h1>
-
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard label="Usuarios" value={kpis.usuarios} />
-        <KpiCard label="Viajes publicados" value={kpis.viajesPublicados} />
-        <KpiCard label="Reservas" value={kpis.reservas} />
-        <KpiCard
-          label="GMV aproximado"
-          value={formatARS(kpis.gmvAproximado)}
-          hint={`${kpis.pagosOk} pagos OK / ${kpis.pagosFail} fallidos`}
-        />
-      </div>
-
-      <KpiChart data={serie} />
+      <h1 className="mb-4 text-lg font-semibold text-subite-dark">Dashboard</h1>
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {!kpis ? (
+        <p className="text-sm text-slate-500">Cargando...</p>
+      ) : (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <KpiCard label="Usuarios" value={kpis.usuarios} />
+            <KpiCard label="Viajes publicados" value={kpis.viajesPublicados} />
+            <KpiCard label="Reservas" value={kpis.reservas} />
+            <KpiCard
+              label="GMV aproximado"
+              value={formatARS(kpis.gmvAproximado)}
+              hint={`${kpis.pagosOk} pagos OK / ${kpis.pagosFail} fallidos`}
+            />
+          </div>
+          <KpiChart data={serie} />
+        </>
+      )}
     </div>
   );
 }

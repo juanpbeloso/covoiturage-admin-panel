@@ -1,38 +1,26 @@
 "use client";
 
-import { useState } from "react";
-
 export type Usuario = {
-  id: number;
+  id: string;
   nombre: string;
   email: string;
-  rol: "Pasajero" | "Conductor";
-  estado: "Activo" | "Bloqueado";
+  rol: string;
+  estado: "Activo" | "Bloqueado" | string;
 };
 
 type UsersTableProps = {
   usuarios: Usuario[];
-  onBloquear?: (id: number) => void;
+  onBloquear?: (id: string) => void;
+  onDesbloquear?: (id: string) => void;
 };
 
-export default function UsersTable({ usuarios, onBloquear }: UsersTableProps) {
-  const [query, setQuery] = useState("");
-
-  const filtrados = usuarios.filter((u) =>
-    `${u.nombre} ${u.email}`.toLowerCase().includes(query.toLowerCase())
-  );
-
+export default function UsersTable({
+  usuarios,
+  onBloquear,
+  onDesbloquear,
+}: UsersTableProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 p-4">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre o email..."
-          className="w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-subite-primary focus:outline-none"
-        />
-      </div>
-
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full text-left text-sm">
         <thead className="bg-slate-50 text-slate-500">
           <tr>
@@ -44,7 +32,7 @@ export default function UsersTable({ usuarios, onBloquear }: UsersTableProps) {
           </tr>
         </thead>
         <tbody>
-          {filtrados.map((u) => (
+          {usuarios.map((u) => (
             <tr key={u.id} className="border-t border-slate-100">
               <td className="px-4 py-2">{u.nombre}</td>
               <td className="px-4 py-2 text-slate-500">{u.email}</td>
@@ -63,16 +51,26 @@ export default function UsersTable({ usuarios, onBloquear }: UsersTableProps) {
               <td className="px-4 py-2">
                 {u.estado === "Activo" && onBloquear && (
                   <button
+                    type="button"
                     onClick={() => onBloquear(u.id)}
                     className="text-xs font-medium text-red-600 hover:underline"
                   >
                     Bloquear
                   </button>
                 )}
+                {u.estado === "Bloqueado" && onDesbloquear && (
+                  <button
+                    type="button"
+                    onClick={() => onDesbloquear(u.id)}
+                    className="text-xs font-medium text-subite-primary hover:underline"
+                  >
+                    Desbloquear
+                  </button>
+                )}
               </td>
             </tr>
           ))}
-          {filtrados.length === 0 && (
+          {usuarios.length === 0 && (
             <tr>
               <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
                 No se encontraron usuarios.

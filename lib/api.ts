@@ -90,19 +90,72 @@ export function getUsuarios(
   });
   return apiFetch<{
     items: Array<{
-      id: number;
+      id: string;
       nombre: string;
       email: string;
-      rol: "Pasajero" | "Conductor";
+      rol: string;
       estado: "Activo" | "Bloqueado";
     }>;
     total: number;
   }>(`/admin/usuarios?${qs.toString()}`, { token });
 }
 
-export function bloquearUsuario(token: string, id: number) {
+export function bloquearUsuario(token: string, id: string) {
   return apiFetch<void>(`/admin/usuarios/${id}/bloquear`, {
     method: "POST",
     token,
   });
+}
+
+export function getDashboardSeries(token: string, days = 7) {
+  return apiFetch<Array<{ fecha: string; reservas: number }>>(
+    `/admin/dashboard/series?days=${days}`,
+    { token }
+  );
+}
+
+export function getViajes(
+  token: string,
+  params: { query?: string; estado?: string; page?: number; pageSize?: number } = {}
+) {
+  const qs = new URLSearchParams({
+    query: params.query ?? "",
+    estado: params.estado ?? "",
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+  return apiFetch<{ items: unknown[]; total: number }>(`/admin/viajes?${qs}`, { token });
+}
+
+export function cancelarViaje(token: string, id: string, reason?: string) {
+  return apiFetch<void>(`/admin/viajes/${id}/cancelar`, {
+    method: "POST",
+    body: { reason },
+    token,
+  });
+}
+
+export function getReservas(
+  token: string,
+  params: { query?: string; estado?: string; page?: number; pageSize?: number } = {}
+) {
+  const qs = new URLSearchParams({
+    query: params.query ?? "",
+    estado: params.estado ?? "",
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+  return apiFetch<{ items: unknown[]; total: number }>(`/admin/reservas?${qs}`, { token });
+}
+
+export function getLogs(
+  token: string,
+  params: { query?: string; page?: number; pageSize?: number } = {}
+) {
+  const qs = new URLSearchParams({
+    query: params.query ?? "",
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+  return apiFetch<{ items: unknown[]; total: number }>(`/admin/logs?${qs}`, { token });
 }
