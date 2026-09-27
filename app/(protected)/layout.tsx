@@ -3,6 +3,7 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/configuracion", label: "Pricing y comisión" },
+  { href: "/gastos-apis", label: "Gastos de APIs" },
   { href: "/precios-referencia", label: "Precios referencia" },
   { href: "/usuarios", label: "Usuarios" },
   { href: "/viajes", label: "Viajes" },
