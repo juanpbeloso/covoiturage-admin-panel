@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatARS } from "@/lib/money";
 
 type ReferencePrice = {
   id: string;
@@ -26,8 +27,18 @@ const emptyForm: Omit<ReferencePrice, "id" | "updatedAt"> = {
   validTo: null,
 };
 
+type PricingConfig = {
+  maxPriceRatioVsReference: number;
+};
+
+type PlatformSettings = {
+  platformCommissionPercent: number;
+};
+
 export default function PreciosReferenciaPage() {
   const [items, setItems] = useState<ReferencePrice[]>([]);
+  const [ratio, setRatio] = useState(1);
+  const [commissionPercent, setCommissionPercent] = useState(12.5);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,9 +53,21 @@ export default function PreciosReferenciaPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/proxy/api/reference-prices");
+      const [res, configRes, settingsRes] = await Promise.all([
+        fetch("/api/proxy/api/reference-prices"),
+        fetch("/api/proxy/api/pricing-config/active"),
+        fetch("/api/proxy/admin/settings"),
+      ]);
       if (!res.ok) throw new Error("No se pudieron cargar los precios.");
       setItems((await res.json()) as ReferencePrice[]);
+      if (configRes.ok) {
+        const config = (await configRes.json()) as PricingConfig;
+        setRatio(config.maxPriceRatioVsReference || 1);
+      }
+      if (settingsRes.ok) {
+        const settings = (await settingsRes.json()) as PlatformSettings;
+        setCommissionPercent(settings.platformCommissionPercent || 0);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar.");
     } finally {
@@ -78,7 +101,8 @@ export default function PreciosReferenciaPage() {
     <div>
       <h1 className="mb-2 text-lg font-semibold text-subite-dark">Precios de referencia</h1>
       <p className="mb-6 text-sm text-slate-500">
-        Precios de colectivo/micro por ruta. La app los usa como tope al publicar viajes.
+        La app no deja publicar un asiento más caro que este precio × el ratio de
+        Pricing ({ratio}). Si el costo real (nafta + peajes) da más, se recorta al tope.
       </p>
 
       <form
@@ -139,9 +163,10 @@ export default function PreciosReferenciaPage() {
             <thead className="border-b bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3">Ruta</th>
-                <th className="px-4 py-3">Precio</th>
+                <th className="px-4 py-3">Micro</th>
+                <th className="px-4 py-3">Tope en la app</th>
+                <th className="px-4 py-3">Comisión si se cobra el tope</th>
                 <th className="px-4 py-3">Fuente</th>
-                <th className="px-4 py-3">Actualizado</th>
               </tr>
             </thead>
             <tbody>
@@ -151,10 +176,24 @@ export default function PreciosReferenciaPage() {
                     <div className="font-medium">{item.originCity} → {item.destinationCity}</div>
                     <div className="text-xs text-slate-500">{item.label}</div>
                   </td>
-                  <td className="px-4 py-3">${item.price.toLocaleString("es-AR")}</td>
-                  <td className="px-4 py-3">{item.source}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {new Date(item.updatedAt).toLocaleDateString("es-AR")}
+                  <td className="px-4 py-3">{formatARS(item.price)}</td>
+                  <td className="px-4 py-3 font-medium">
+                    {formatARS(item.price * ratio)}
+                    <div className="text-xs font-normal text-slate-500">
+                      ratio {ratio} × precio micro
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-emerald-700">
+                    {formatARS(item.price * ratio * (commissionPercent / 100))}
+                    <div className="text-xs font-normal text-slate-500">
+                      {commissionPercent}% sobre el tope
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div>{item.source}</div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(item.updatedAt).toLocaleDateString("es-AR")}
+                    </div>
                   </td>
                 </tr>
               ))}

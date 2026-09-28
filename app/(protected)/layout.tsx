@@ -3,12 +3,12 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/configuracion", label: "Pricing y comisión" },
-  { href: "/gastos-apis", label: "Gastos de APIs" },
   { href: "/precios-referencia", label: "Precios referencia" },
   { href: "/usuarios", label: "Usuarios" },
   { href: "/viajes", label: "Viajes" },
   { href: "/reservas", label: "Reservas y pagos" },
   { href: "/logs", label: "Logs" },
+  { href: "/gastos-apis", label: "Gastos de APIs" },
 ];
 
 export default function ProtectedLayout({
